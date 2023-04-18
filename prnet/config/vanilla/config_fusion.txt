@@ -1,0 +1,25 @@
+[DEFAULT]
+dataset = nclt
+dataset_folder = /mnt/workspace/datasets/NCLT
+
+[TRAIN]
+num_workers = 16
+batch_size = 8
+batch_size_limit = 32
+batch_expansion_rate = 1.0
+batch_expansion_th = 0.7
+save_freq = 2
+eval_freq = 2
+
+lr = 1e-3
+epochs = 30
+scheduler_milestones = 20
+aug_mode = 3
+weight_decay = 1e-4
+
+loss = BatchHardTripletMarginLoss
+margin = 0.2
+
+train_file = train_2012-02-04_2012-03-17.pickle
+val_file = val_2012-02-04_2012-03-17.pickle
+test_file = test_2012-02-04_2012-03-17.pickle

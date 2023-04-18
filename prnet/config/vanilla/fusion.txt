@@ -1,0 +1,36 @@
+[MODEL]
+model = fusion_rgb_unet_gem_normalize
+use_rgb = True
+cam_id = 0,1,2,3,4
+
+use_xyz = False
+normalize = True
+aggregation = gem
+
+# coordinates: polar, cartesian
+coordinates = polar
+
+# image_encoder: res18, unet, res50
+# point_encoder: voxel, focal, unet
+image_meta_path = /mnt/workspace/datasets/NCLT/cam_params/image_meta.pkl
+image_encoder = res50
+point_encoder = unet
+
+output_dim = 256
+feature_dim = 256
+lidar_fix_num = 30000
+scene_centroid = 0.0, 0.0, 0.0
+
+xbounds = -70, 70
+ybounds = -22, 0
+zbounds = -70, 70
+
+Z = 100
+Y = 20
+X = 100
+
+radius = 40
+theta = 120
+
+Height = 224
+Width = 384

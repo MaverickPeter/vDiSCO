@@ -78,7 +78,7 @@ def generate_image_meta_pickle(dataset_root: str):
 
 
 
-def generate_training_tuples(ds: OxfordSequences, pos_threshold: float = 10, neg_threshold: float = 50):
+def generate_training_tuples(ds: OxfordSequences, pos_threshold: float = 10, neg_threshold: float = 50, sph: bool = False):
     # displacement: displacement between consecutive anchors (if None all scans are takes as anchors).
     #               Use some small displacement to ensure there's only one scan if the vehicle does not move
 
@@ -89,7 +89,7 @@ def generate_training_tuples(ds: OxfordSequences, pos_threshold: float = 10, neg
         images = [load_img_file_oxford(file_pathname[i], camera_mode[i-2]) for i in range(2, 6)]
         sph_filename = file_pathname[2].replace('png', 'png')
         sph_filename = sph_filename.replace('mono_left_rect', 'sph')
-        sph_img = generate_sph_image(images, 'oxford', ds.dataset_root)
+        sph_img = generate_sph_image(images, 'oxford', "/media/workspace/dataset/Oxford/image_meta.pkl", ds.dataset_root)
         cv2.imwrite(sph_filename, sph_img)
 
         anchor_pos = ds.get_xy()[anchor_ndx]
@@ -145,6 +145,7 @@ if __name__ == '__main__':
     parser.add_argument('--pos_threshold', default=2.0)
     parser.add_argument('--neg_threshold', default=3.0)
     parser.add_argument('--sampling_distance', type=float, default=0.2)
+    parser.add_argument('--sph', type=bool, default=False)
     args = parser.parse_args()
 
     sequences = ['2019-01-11-13-24-51-radar-oxford-10k', '2019-01-15-13-06-37-radar-oxford-10k']
@@ -156,7 +157,7 @@ if __name__ == '__main__':
     print(f'Minimum displacement between consecutive anchors: {args.sampling_distance}')
 
     ds = OxfordSequences(args.dataset_root, sequences, split='train', sampling_distance=args.sampling_distance)
-    train_tuples = generate_training_tuples(ds, args.pos_threshold, args.neg_threshold)
+    train_tuples = generate_training_tuples(ds, args.pos_threshold, args.neg_threshold, args.sph)
     pickle_name = f'train_{sequences[0]}_{sequences[1]}_{args.pos_threshold}_{args.neg_threshold}.pickle'
     train_tuples_filepath = os.path.join(args.dataset_root, pickle_name)
     # pickle.dump(train_tuples, open(train_tuples_filepath, 'wb'))
@@ -164,10 +165,10 @@ if __name__ == '__main__':
 
     ds = OxfordSequences(args.dataset_root, sequences, split='test', sampling_distance=args.sampling_distance)
     print("test sequences len: ", len(ds))
-    test_tuples = generate_training_tuples(ds, args.pos_threshold, args.neg_threshold)
+    test_tuples = generate_training_tuples(ds, args.pos_threshold, args.neg_threshold, args.sph)
     print("test tuple length: ", len(test_tuples))
     pickle_name = f'val_{sequences[0]}_{sequences[1]}_{args.pos_threshold}_{args.neg_threshold}.pickle'
     test_tuples_filepath = os.path.join(args.dataset_root, pickle_name)
-    # pickle.dump(test_tuples, open(test_tuples_filepath, 'wb'))
+    pickle.dump(test_tuples, open(test_tuples_filepath, 'wb'))
 
-    # generate_image_meta_pickle(args.dataset_root)
+    generate_image_meta_pickle(args.dataset_root)

@@ -299,8 +299,5 @@ def rotation_on_depth(depth, rotation):
         N = np.float32([[1,0,t_x],[0,1,t_y]])
         depth = cv2.warpAffine(depth, N, (col, row))
         depth[:, (900-t):900] = patch
-    # plt.figure()
-    # plt.imshow(depth)
-    # plt.show()
-    # plt.savefig("/mnt/workspace/depth_rot.png")
+
     return depth

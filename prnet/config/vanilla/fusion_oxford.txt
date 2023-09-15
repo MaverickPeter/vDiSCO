@@ -1,5 +1,5 @@
 [MODEL]
-model = fusion_rgb_only_unet_fft_normalize
+model = fusion_rgb_only_unet_fft
 use_rgb = True
 cam_id = 0,1,2,3
 

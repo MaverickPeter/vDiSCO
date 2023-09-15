@@ -8,7 +8,6 @@ import random
 from typing import List
 import open3d as o3d
 from time import time
-# import pygicp
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
 import torch
 import torch.nn as nn
@@ -190,21 +189,6 @@ class GLEvaluator(Evaluator):
 
             global_metrics['tp'] = {r: [global_metrics['tp'][r][nn] + (1 if (euclid_dist[:nn + 1] <= r).any() else 0) for nn in range(self.k)] for r in self.radius}
             
-            # if euclid_dist[0] < 2:
-            with open('/mnt/workspace/bevformer-10m.txt', 'a') as f:
-                f.write(self.eval_set.query_set[query_ndx].rel_scan_filepath)
-                f.write(',')
-                f.write(self.eval_set.map_set[nn_ndx[0]].rel_scan_filepath)
-                f.write(',')
-                if euclid_dist[0] < 10:
-                    f.write("1")
-                else:
-                    f.write("0")
-                f.write('\n')
-
-            # print(self.eval_set.query_set[query_ndx].rel_scan_filepath)
-            # print(self.eval_set.map_set[nn_ndx[0]].rel_scan_filepath)
-                # cv2.imwrite("")
 
         if eval_yaw:
             error_metrics = np.stack(error_metrics)
@@ -224,7 +208,6 @@ class GLEvaluator(Evaluator):
             print("50%: ", np.quantile(error_metrics, 0.50))
             print("75%: ", np.quantile(error_metrics, 0.75))
 
-            np.save("/mnt/workspace/DiSCO_plusplus/tools/statistic/" + str(self.params.dataset_type) + ".npy", error_metrics)
 
         # Calculate mean metrics
         global_metrics["recall"] = {r: [global_metrics['tp'][r][nn] / self.n_samples for nn in range(self.k)] for r in self.radius}
@@ -275,7 +258,6 @@ class GLEvaluator(Evaluator):
                 lidar_extra = torch.from_numpy(lidar_extra).float()
 
                 pc = torch.cat([lidar_data, lidar_extra], dim=1)   
-                # pc = torch.tensor(pc, dtype=torch.float)
                 pc = pc.unsqueeze(0)
 
                 if self.params.quantizer == None:
@@ -289,8 +271,6 @@ class GLEvaluator(Evaluator):
                                            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 
             if self.params.use_rgb:
-                # import cv2
-                # cv2.imwrite("/mnt/workspace/pano.png",imgs[0])
                 imgs = [toTensor(e) for e in imgs]
                 imgs = torch.stack(imgs).float().cuda()
                 if not sph:
@@ -364,33 +344,6 @@ class GLEvaluator(Evaluator):
             print(f"Yaw err median [deg] : ", end='')
             print("{:0.3f}, ".format(yaw_err_median), end='')
             print("")
-
-
-# apply icp using fast_gicp (https://github.com/SMRT-AIST/fast_gicp)
-# def fast_gicp(source, target, max_correspondence_distance=3.0, init_pose=np.eye(4)):
-#     # downsample the point cloud before registration
-
-#     source = pygicp.downsample(source, 0.2)
-#     target = pygicp.downsample(target, 0.2)
-
-#     # pygicp.FastGICP has more or less the same interfaces as the C++ version
-#     gicp = pygicp.FastGICP()
-#     gicp.set_input_target(target)
-#     gicp.set_input_source(source)
-
-#     # optional arguments
-#     gicp.set_num_threads(4)
-#     gicp.set_max_correspondence_distance(max_correspondence_distance)
-
-#     # align the point cloud using the initial pose calculated by RING
-#     T_matrix = gicp.align(initial_guess=init_pose)
-
-#     # get the fitness score
-#     fitness = gicp.get_fitness_score(max_range=1.0)
-#     # get the transformation matrix
-#     T_matrix = gicp.get_final_transformation()
-
-#     return fitness, T_matrix
 
 
 if __name__ == "__main__":

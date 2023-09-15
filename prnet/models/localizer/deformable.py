@@ -203,10 +203,8 @@ class Encoder_eff(nn.Module):
             input_1, input_2 = endpoints['reduction_5'], endpoints['reduction_4']
         elif self.downsample == 8:
             input_1, input_2 = endpoints['reduction_4'], endpoints['reduction_3']
-        # print('input_1', input_1.shape)
-        # print('input_2', input_2.shape)
         x = self.upsampling_layer(input_1, input_2)
-        # print('x', x.shape)
+
         return x
 
     def forward(self, x):
@@ -214,10 +212,10 @@ class Encoder_eff(nn.Module):
         x = self.depth_layer(x)  # feature and depth head
         return x
 
-# no radar/lidar integration
-class BevformerNet(nn.Module):
+
+class DeformableNet(nn.Module):
     def __init__(self, model_params: ModelParams):
-        super(BevformerNet, self).__init__()
+        super(DeformableNet, self).__init__()
 
         self.Z, self.Y, self.X = model_params.Z, model_params.Y, model_params.X
         self.feature_dim = model_params.feature_dim
@@ -239,9 +237,11 @@ class BevformerNet(nn.Module):
             self.encoder = Encoder_res50(feat2d_dim)
         elif self.encoder_type == "effb0":
             self.encoder = Encoder_eff(feat2d_dim, version='b0')
-        else:
+        elif self.encoder_type == "effb4":
             # effb4
             self.encoder = Encoder_eff(feat2d_dim, version='b4')
+        else:
+            raise NotImplementedError('Unknown backbone2d: {}'.format(self.encoder_type))
 
         # BEVFormer self & cross attention layers
         self.bev_queries = nn.Parameter(0.1*torch.randn(feature_dim, self.Z, self.X)) # C, Z, X
@@ -304,7 +304,6 @@ class BevformerNet(nn.Module):
         rgb_camXs: (B,S,C,H,W)
         pix_T_cams: (B,S,4,4)
         cam0_T_camXs: (B,S,4,4)
-        vox_util: vox util object
         '''
         pc = batch['pc']    # B,V,4 
         im = batch['img']   # B,5,3,224,384 (B,S,C,H,W) S = number of cameras
@@ -341,30 +340,9 @@ class BevformerNet(nn.Module):
         device = rgb_camXs_.device
 
         feat_camXs_ = self.encoder(rgb_camXs_)
-        print(feat_camXs_.shape)
 
         _, C, Hf, Wf = feat_camXs_.shape
         feat_camXs = __u(feat_camXs_) # (B, S, C, Hf, Wf)
-        # feat_clone = feat_camXs[0,...].clone()
-        # feat_camXs[1,2:4,...] = feat_clone[:2,...]
-        # feat_camXs[1,:2,...] = feat_clone[2:4,...]
-
-        # plt.figure()
-        # plt.imshow(feat_camXs[0,0,0,...].detach().cpu().numpy())
-        # plt.show()
-        # plt.savefig('/mnt/workspace/workgroup/xxc/feat-1.png')
-        # plt.figure()
-        # plt.imshow(feat_camXs[0,1,0,...].detach().cpu().numpy())
-        # plt.show()
-        # plt.savefig('/mnt/workspace/workgroup/xxc/feat-2.png')
-        # plt.figure()
-        # plt.imshow(feat_camXs[0,2,0,...].detach().cpu().numpy())
-        # plt.show()
-        # plt.savefig('/mnt/workspace/workgroup/xxc/feat-3.png')
-        # plt.figure()
-        # plt.imshow(feat_camXs[0,3,0,...].detach().cpu().numpy())
-        # plt.show()
-        # plt.savefig('/mnt/workspace/workgroup/xxc/feat-4.png')
 
         sy = Hf/float(H)
         sx = Wf/float(W)
@@ -416,14 +394,7 @@ class BevformerNet(nn.Module):
             bev_queries = self.norm3_layers[i](bev_queries)
 
         feat_bev = bev_queries.permute(0, 2, 1).reshape(B, self.feature_dim, self.Z, self.X)
-        # plt.figure()
-        # plt.imshow(feat_bev[0,0,...].detach().cpu().numpy())
-        # plt.show()
-        # plt.savefig('/mnt/workspace/workgroup/xxc/query.png',cmap=plt.cm.jet)
-        # plt.figure()
-        # plt.imshow(feat_bev[1,0,...].detach().cpu().numpy())
-        # plt.show()
-        # plt.savefig('/mnt/workspace/workgroup/xxc/pos.png',cmap=plt.cm.jet)
+
         out_h = self.radius
         out_w = self.theta
         new_h = torch.linspace(0, 1, out_h).view(-1, 1).repeat(1, out_w)
@@ -447,32 +418,13 @@ class BevformerNet(nn.Module):
             x = self.fc_out(x)
         elif self.aggregation == 'fft':
             x = self.conv(x)
-            # plt.figure()
-            # plt.imshow(x[0,0,...].detach().cpu().numpy(),cmap=plt.cm.jet)
-            # plt.show()
-            # plt.savefig('/mnt/workspace/workgroup/xxc/bev-query.png')
-            # plt.figure()
-            # plt.imshow(x[1,0,...].detach().cpu().numpy(),cmap=plt.cm.jet)
-            # plt.show()
-            # plt.savefig('/mnt/workspace/workgroup/xxc/bev-pos.png')
             x, fourier_spectrum = self.forward_fft(x)
- 
-            # plt.figure()
-            # plt.imshow((torch.abs(F.normalize(x[1,0,...], dim=1)-F.normalize(x[0,0,...], dim=1))).detach().cpu().numpy())
-            # plt.colorbar(orientation='horizontal')
-            # plt.clim(0, 1) 
-            # plt.show()
-            # plt.savefig('/mnt/workspace/workgroup/xxc/bev-diff.png')
             x = x[:,:, (rho//2 - 8):(rho//2 + 8), (theta//2 - 8):(theta//2 + 8)]
         elif self.aggregation == 'gem':
-            # x = self.gem_conv(x)
+            x = self.gem_conv(x)
             x = self.pooling(x)
         elif self.aggregation == 'max':
             x = self.pooling(x)
-
-        # x = self.conv(polar_img_bev)        
-        # x, fourier_spectrum = self.forward_fft(x)
-        # x = x[:,:, (self.radius//2 - 8):(self.radius//2 + 8), (self.theta//2 - 8):(self.theta//2 + 8)]
 
         x = x.reshape(B, self.output_dim)
 
@@ -487,7 +439,7 @@ class BevformerNet(nn.Module):
 
 
     def print_info(self):
-        print('Model class: BevformerNet')
+        print('Model class: DeformableNet')
         n_params = sum([param.nelement() for param in self.parameters()])
         print('Total parameters: {}'.format(n_params))
         n_params = sum([param.nelement() for param in self.encoder.parameters()])

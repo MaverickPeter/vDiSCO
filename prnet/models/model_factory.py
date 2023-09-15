@@ -3,6 +3,8 @@ from prnet.models.localizer.netvlad import NetVLAD_Pretrain
 from prnet.models.localizer.netvlad import NetVLAD
 from prnet.models.localizer.deformable import DeformableNet
 from prnet.models.localizer.deformable_fusion import DeformAttnFusionNet
+from prnet.models.localizer.hownet import HowNet
+from prnet.models.localizer.dolgnet import DolgNet
 from prnet.utils.params import ModelParams
 import torchvision.models as models
 import torch
@@ -26,6 +28,10 @@ def model_factory(model_params: ModelParams):
         model = DeformableNet(model_params)
     elif 'deformattn' in model_params.model:
         model = DeformAttnFusionNet(model_params)
+    elif 'hownet' in model_params.model:
+        model = HowNet(model_params)
+    elif 'dolg' in model_params.model:
+        model = DolgNet(model_params)
     elif 'netvlad' in model_params.model and not 'pretrain' in model_params.model:
         model = NetVLAD(model_params)
     elif 'netvlad' in model_params.model and 'pretrain' in model_params.model:

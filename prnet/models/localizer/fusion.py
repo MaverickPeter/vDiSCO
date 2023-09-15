@@ -552,10 +552,7 @@ class Decoder(nn.Module):
         feat_output = self.feat_head(x)
 
         return x
-        # return {
-        #     'raw_feat': x,
-        #     'feat': feat_output.view(b, *feat_output.shape[1:]),
-        # }
+
 
 
 class GeM(nn.Module):

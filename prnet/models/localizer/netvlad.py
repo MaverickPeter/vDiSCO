@@ -153,15 +153,6 @@ class NetVLAD(torch.nn.Module):
         __u = lambda x: basic.unpack_seqdim(x, batch_size)
         im = __p(im)
 
-        # for i in range(5):
-        #     plt.figure(1)
-        #     feat_mem_show = im.clone()
-        #     feat_mem_show = feat_mem_show[i,...]
-        #     feat_mem_show = feat_mem_show.permute(1,2,0)
-        #     image = feat_mem_show.detach().cpu().numpy()*255  # we clone the tensor to not do changes on it
-        #     cv2.imwrite("/mnt/workspace/img"+ str(i)+ ".png", cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
-
-
         x = self.extract_image_feature(im)  # (B*5, C, H, W)
         x = __u(x)
         _, S, C, H, W = x.shape
@@ -319,10 +310,6 @@ class Decoder(nn.Module):
         feat_output = self.feat_head(x)
 
         return x
-        # return {
-        #     'raw_feat': x,
-        #     'feat': feat_output.view(b, *feat_output.shape[1:]),
-        # }
 
 
 class GeM(nn.Module):
@@ -355,8 +342,8 @@ class Encoder_res50(nn.Module):
     def forward(self, x):
         x1 = self.backbone(x)
         x = self.layer3(x1)
-        # x = self.upsampling_layer(x2, x1)
-        # x = self.depth_layer(x)
+        x = self.upsampling_layer(x2, x1)
+        x = self.depth_layer(x)
 
         return x
 
@@ -375,8 +362,8 @@ class Encoder_res101(nn.Module):
     def forward(self, x):
         x1 = self.backbone(x)
         x = self.layer3(x1)
-        # x = self.upsampling_layer(x2, x1)
-        # x = self.depth_layer(x)
+        x = self.upsampling_layer(x2, x1)
+        x = self.depth_layer(x)
 
         return x
 
@@ -567,10 +554,9 @@ class Encoder_eff(nn.Module):
             input_1, input_2 = endpoints['reduction_5'], endpoints['reduction_4']
         elif self.downsample == 8:
             input_1, input_2 = endpoints['reduction_4'], endpoints['reduction_3']
-        # print('input_1', input_1.shape)
-        # print('input_2', input_2.shape)
+
         x = self.upsampling_layer(input_1, input_2)
-        # print('x', x.shape)
+
         return x
 
     def forward(self, x):

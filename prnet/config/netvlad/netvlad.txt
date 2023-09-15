@@ -1,10 +1,10 @@
 [MODEL]
-model = netvlad_unet_no_normalize
+model = netvlad
 cam_id = 0,1,2,3,4
 
 # image_encoder: res18, unet, res50
 image_encoder = res18
-image_meta_path = /mnt/workspace/datasets/NCLT/cam_params/image_meta.pkl
+image_meta_path = /mnt/workspace/datasets/NCLT/image_meta.pkl
 
 scene_centroid = 0.0, 0.0, 0.0
 xbounds = -70, 70

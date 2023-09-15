@@ -1,18 +1,18 @@
 [MODEL]
-model = fusion_rgb_unet_gem
+model = deformable_fft_res50
 use_rgb = True
 cam_id = 0,1,2,3,4
 
 use_xyz = False
 normalize = True
-aggregation = gem
+aggregation = fft
 
 # coordinates: polar, cartesian
 coordinates = polar
 
-# image_encoder: res18, unet, res50
+# image_encoder: res101, res50, effb0, effb4
 # point_encoder: voxel, focal, unet
-image_meta_path = /mnt/workspace/datasets/NCLT/cam_params/image_meta.pkl
+image_meta_path = /media/mav-server/ssd/Datasets/NCLT/cam_params/image_meta.pkl
 image_encoder = res50
 point_encoder = unet
 
@@ -22,7 +22,7 @@ lidar_fix_num = 30000
 scene_centroid = 0.0, 0.0, 0.0
 
 xbounds = -70, 70
-ybounds = -22, 0
+ybounds = -22, 2
 zbounds = -70, 70
 
 Z = 100

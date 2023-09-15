@@ -1,0 +1,5 @@
+[MODEL]
+model = hownet
+use_rgb = True
+use_panorama = True
+image_encoder = res50

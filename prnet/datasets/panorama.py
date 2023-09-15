@@ -6,10 +6,11 @@ from torchvision import transforms
 import imutils
 import cv2
 import os
+import os
 import torch
 
-def generate_sph_image(images, dataset_type, prespheredir):
-    stitcher = Stitcher(dataset_type)
+def generate_sph_image(images, dataset_type, image_meta, prespheredir):
+    stitcher = Stitcher(dataset_type, image_meta)
     sph_img = stitcher.stitch(images, prespheredir)
     sph_img = cv2.cvtColor(sph_img, cv2.COLOR_BGR2RGB)
     sph_img = cv2.rotate(sph_img, cv2.ROTATE_180)
@@ -37,17 +38,17 @@ def remove_the_blackborder(image):
     return res_image   
 
 
-def XYZtoRC(dataset_type, hits, img, cam_id):
+def XYZtoRC(dataset_type, image_meta, hits, img, cam_id):
     if dataset_type == 'nclt':
-        with open("/mnt/workspace/datasets/NCLT/cam_params/image_meta.pkl", 'rb') as handle:
+        with open(image_meta, 'rb') as handle:
             image_meta = pickle.load(handle)
     elif dataset_type == 'oxford':
-        with open("/mnt/workspace/datasets/Oxford/image_meta.pkl", 'rb') as handle:
+        with open(image_meta, 'rb') as handle:
             image_meta = pickle.load(handle)
 
     intrins = np.array(image_meta['K'])
     cams_T_body = np.array(image_meta['T'])
-    # print(hits)
+
     K = intrins[cam_id]
     T = cams_T_body[cam_id]
 
@@ -80,26 +81,27 @@ def spherical_projection(dataset_type, imgs, f, prespheredir) :
     pix_x = []
     pix_y = []
     
-    # for y in range(outrow):
-    #    for x in range(outcol):
-    #         theta = -(2 * np.pi * x / (outcol-1) - np.pi)
-    #         phi = np.pi * y / (outrow-1)
+    if os.path.exists(prespheredir + "sphere_points.npy") and os.path.exists(prespheredir + "pix.npy"):
+        for y in range(outrow):
+            for x in range(outcol):
+                theta = -(2 * np.pi * x / (outcol-1) - np.pi)
+                phi = np.pi * y / (outrow-1)
 
-    #         globalZ = R * np.cos(phi) 
-    #         globalX = R * np.sin(phi) * np.cos(theta)
-    #         globalY = R * np.sin(phi) * np.sin(theta)
-    #         points += [[globalX, globalY, globalZ, 1]]
-    #         pix_x.append(x)
-    #         pix_y.append(y)
+                globalZ = R * np.cos(phi) 
+                globalX = R * np.sin(phi) * np.cos(theta)
+                globalY = R * np.sin(phi) * np.sin(theta)
+                points += [[globalX, globalY, globalZ, 1]]
+                pix_x.append(x)
+                pix_y.append(y)
 
-    # points = np.asarray(points)
-    # points = points.transpose()
-    # pix_x = np.asarray(pix_x)
-    # pix_y = np.asarray(pix_y)
-    # pix = np.asarray([pix_y, pix_x])
+        points = np.asarray(points)
+        points = points.transpose()
+        pix_x = np.asarray(pix_x)
+        pix_y = np.asarray(pix_y)
+        pix = np.asarray([pix_y, pix_x])
 
-    # np.save("/mnt/workspace/datasets/NCLT/sphere_points_large.npy", points)
-    # np.save("/mnt/workspace/datasets/NCLT/pix_large.npy", pix)
+        np.save(prespheredir + "sphere_points.npy", points)
+        np.save(prespheredir + "pix.npy", pix)
 
     points = np.load(os.path.join(prespheredir, "sphere_points.npy"))
     pix = np.load(os.path.join(prespheredir, "pix.npy"))
@@ -135,18 +137,19 @@ def spherical_projection(dataset_type, imgs, f, prespheredir) :
 
 
 class Stitcher:
-    def __init__(self, dataset_type):
+    def __init__(self, dataset_type, image_meta):
         # determine if we are using OpenCV v3.X
         self.isv3 = imutils.is_cv3(or_better=True)
         self.dataset_type = dataset_type
+        self.image_meta = image_meta
 
     def stitch(self, images, prespheredir):
 
         if self.dataset_type == 'nclt':
-            with open("/mnt/workspace/datasets/NCLT/cam_params/image_meta.pkl", 'rb') as handle:
+            with open(self.image_meta, 'rb') as handle:
                 image_meta = pickle.load(handle)
         elif self.dataset_type == 'oxford':
-            with open("/mnt/workspace/datasets/Oxford/image_meta.pkl", 'rb') as handle:
+            with open(self.image_meta, 'rb') as handle:
                 image_meta = pickle.load(handle)
 
         intrins = np.array(image_meta['K'])
@@ -156,12 +159,9 @@ class Stitcher:
         focal = intrins[3][1,1]
 
         sph_img, cv_img = spherical_projection(self.dataset_type, images, focal, prespheredir)
-        # sph_img = remove_the_blackborder(cv_img)
 
         if self.dataset_type == 'nclt':
             sph_img = cv_img[170:330,...]
-            # cv2.imwrite("/mnt/workspace/sph.png",sph_img)
-            # sph_img = sph_img
         elif self.dataset_type == 'oxford':
             sph_img = sph_img[200:400,...]
 

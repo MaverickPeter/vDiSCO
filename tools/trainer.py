@@ -9,7 +9,6 @@ import pathlib
 import wandb
 import torch.nn as nn
 from evaluate import GLEvaluator
-from evaluate_overlap import OverlapEvaluator
 from prnet.utils.params import TrainingParams, get_datetime
 from prnet.models.loss import make_losses
 from prnet.models.model_factory import model_factory
@@ -210,7 +209,7 @@ def do_train(params: TrainingParams, resume=False, debug=False, visualize=False,
                     batch_stats['loss'] = loss.item()
 
                     if yaw_loss is not None:
-                        total_loss = loss
+                        total_loss = loss + yaw_loss
                     else:
                         total_loss = loss
 

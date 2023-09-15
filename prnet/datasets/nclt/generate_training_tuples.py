@@ -47,7 +47,7 @@ def load_pc(file_pathname):
 def pc2image_file(pc_filename, vel_folder, cam_num, vel_type):
     img_filename = pc_filename.replace(vel_type, '.jpg')
     img_filename = img_filename.replace(vel_folder, '/lb3_u_s_384/Cam' + str(cam_num) + "/")
-    # print(img_filename)
+
     return img_filename
 
 
@@ -58,20 +58,20 @@ def load_im_file_for_generate(filename):
     return input_image
 
 
-def generate_training_tuples(ds: NCLTSequences, pos_threshold: float = 10, neg_threshold: float = 50):
+def generate_training_tuples(ds: NCLTSequences, pos_threshold: float = 10, neg_threshold: float = 50, sph: bool = False):
     # displacement: displacement between consecutive anchors (if None all scans are takes as anchors).
     #               Use some small displacement to ensure there's only one scan if the vehicle does not move
 
     tuples = {}   # Dictionary of training tuples: tuples[ndx] = (sef ot positives, set of non negatives)
     for anchor_ndx in tqdm.tqdm(range(len(ds))):
-        # reading_filepath = os.path.join(ds.dataset_root, ds.rel_scan_filepath[anchor_ndx])
-        # images = [load_im_file_for_generate(pc2image_file(reading_filepath, '/velodyne_sync/', i, '.bin')) for i in range(1, 6)]
-        # sph_filename = reading_filepath.replace('bin', 'jpg')
-        # sph_filename = sph_filename.replace('velodyne_sync', 'sph')
-        # sph_img = generate_sph_image(images, 'nclt', ds.dataset_root)
-        # # print(sph_filename)
-        # cv2.imwrite(sph_filename, sph_img)
-        # query_yaw, pitch, roll = m2ypr(ds.poses[anchor_ndx])
+        if sph:
+            reading_filepath = os.path.join(ds.dataset_root, ds.rel_scan_filepath[anchor_ndx])
+            images = [load_im_file_for_generate(pc2image_file(reading_filepath, '/velodyne_sync/', i, '.bin')) for i in range(1, 6)]
+            sph_filename = reading_filepath.replace('bin', 'jpg')
+            sph_filename = sph_filename.replace('velodyne_sync', 'sph')
+            sph_img = generate_sph_image(images, 'nclt', "/media/workspace/dataset/NCLT/image_meta.pkl", ds.dataset_root)
+            cv2.imwrite(sph_filename, sph_img)
+            query_yaw, pitch, roll = m2ypr(ds.poses[anchor_ndx])
 
         anchor_pos = ds.get_xy()[anchor_ndx]
 
@@ -85,15 +85,15 @@ def generate_training_tuples(ds: NCLTSequences, pos_threshold: float = 10, neg_t
         positives = np.sort(positives)
         non_negatives = np.sort(non_negatives)
 
-        # db_yaw, pitch, roll = m2ypr(ds.poses[positives[5]])
-        # if (db_yaw - query_yaw) /np.pi * 180. > 30.0:
-        #     reading_filepath = os.path.join(ds.dataset_root, ds.rel_scan_filepath[positives[5]])
-        #     images = [load_im_file_for_generate(pc2image_file(reading_filepath, '/velodyne_sync/', i, '.bin')) for i in range(1, 6)]
-        #     sph_filename = reading_filepath.replace('bin', 'jpg')
-        #     sph_filename = sph_filename.replace('velodyne_sync', 'sph')
-        #     sph_img = generate_sph_image(images, 'nclt', ds.dataset_root)
-        #     # cv2.imwrite(sph_filename, sph_img)
-        #     cv2.imwrite("/mnt/workspace/db.png", sph_img)
+        if sph:
+            db_yaw, pitch, roll = m2ypr(ds.poses[positives[5]])
+            if (db_yaw - query_yaw) /np.pi * 180. > 30.0:
+                reading_filepath = os.path.join(ds.dataset_root, ds.rel_scan_filepath[positives[5]])
+                images = [load_im_file_for_generate(pc2image_file(reading_filepath, '/velodyne_sync/', i, '.bin')) for i in range(1, 6)]
+                sph_filename = reading_filepath.replace('bin', 'jpg')
+                sph_filename = sph_filename.replace('velodyne_sync', 'sph')
+                sph_img = generate_sph_image(images, 'nclt', "/media/workspace/dataset/NCLT/image_meta.pkl", ds.dataset_root)
+                cv2.imwrite(sph_filename, sph_img)
 
         # ICP pose refinement
         fitness_l = []
@@ -258,6 +258,7 @@ if __name__ == '__main__':
     parser.add_argument('--dataset_root', type=str, required=True)
     parser.add_argument('--pos_threshold', default=2.0)
     parser.add_argument('--neg_threshold', default=3.0)
+    parser.add_argument('--sph', type=bool, default=False)
     parser.add_argument('--sampling_distance', type=float, default=0.2)
     args = parser.parse_args()
 
@@ -270,18 +271,18 @@ if __name__ == '__main__':
     print(f'Minimum displacement between consecutive anchors: {args.sampling_distance}')
 
     ds = NCLTSequences(args.dataset_root, sequences, split='train', sampling_distance=args.sampling_distance)
-    train_tuples = generate_training_tuples(ds, args.pos_threshold, args.neg_threshold)
+    train_tuples = generate_training_tuples(ds, args.pos_threshold, args.neg_threshold, args.sph)
     pickle_name = f'train_{sequences[0]}_{sequences[1]}_{args.pos_threshold}_{args.neg_threshold}.pickle'
     train_tuples_filepath = os.path.join(args.dataset_root, pickle_name)
-    # pickle.dump(train_tuples, open(train_tuples_filepath, 'wb'))
+    pickle.dump(train_tuples, open(train_tuples_filepath, 'wb'))
     train_tuples = None
 
     ds = NCLTSequences(args.dataset_root, sequences, split='test', sampling_distance=args.sampling_distance)
     print("test sequences len: ", len(ds))
-    test_tuples = generate_training_tuples(ds, args.pos_threshold, args.neg_threshold)
+    test_tuples = generate_training_tuples(ds, args.pos_threshold, args.neg_threshold, args.sph)
     print("test tuple length: ", len(test_tuples))
     pickle_name = f'val_{sequences[0]}_{sequences[1]}_{args.pos_threshold}_{args.neg_threshold}.pickle'
     test_tuples_filepath = os.path.join(args.dataset_root, pickle_name)
-    # pickle.dump(test_tuples, open(test_tuples_filepath, 'wb'))
+    pickle.dump(test_tuples, open(test_tuples_filepath, 'wb'))
 
-    # generate_image_meta_pickle(args.dataset_root)
+    generate_image_meta_pickle(args.dataset_root)

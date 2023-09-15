@@ -9,7 +9,6 @@ from torchvision import transforms as transforms
 
 from prnet.datasets.nclt.nclt_raw import NCLTPointCloudLoader, NCLTPointCloudWithImageLoader
 from prnet.datasets.oxford.oxford_raw import OxfordPointCloudLoader, OxfordPointCloudWithImageLoader
-from prnet.datasets.kitti360.kitti360_raw import Kitti360PointCloudLoader, Kitti360PointCloudWithImageLoader
 from prnet.utils.data_utils.point_clouds import PointCloudLoader, PointCloudWithImageLoader
 from prnet.utils.data_utils.poses import m2ypr
 from prnet.datasets.panorama import generate_sph_image
@@ -203,8 +202,6 @@ def get_pointcloud_loader(dataset_type) -> PointCloudLoader:
         return NCLTPointCloudLoader()
     elif dataset_type == 'oxford':
         return OxfordPointCloudLoader()
-    elif dataset_type == 'kitti360':
-        return Kitti360PointCloudLoader()
     else:
         raise NotImplementedError(f"Unsupported dataset type: {dataset_type}")
 
@@ -214,8 +211,6 @@ def get_pointcloud_with_image_loader(dataset_type) -> PointCloudWithImageLoader:
         return NCLTPointCloudWithImageLoader()
     elif dataset_type == 'oxford':
         return OxfordPointCloudWithImageLoader()
-    elif dataset_type == 'kitti360':
-        return Kitti360PointCloudWithImageLoader()
     else:
         raise NotImplementedError(f"Unsupported dataset type: {dataset_type}")
 

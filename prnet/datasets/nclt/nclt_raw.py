@@ -77,7 +77,7 @@ def calculate_T(x_lb_c, x_lb_body):
 def pc2image_file(pc_filename, vel_folder, cam_num, vel_type):
     img_filename = pc_filename.replace(vel_type, '.jpg')
     img_filename = img_filename.replace(vel_folder, '/lb3_u_s_384/Cam' + str(cam_num) + "/")
-    # print(img_filename)
+
     return img_filename
 
 

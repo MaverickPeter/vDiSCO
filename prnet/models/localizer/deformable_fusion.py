@@ -145,7 +145,6 @@ class DeformAttnFusionNet(torch.nn.Module):
             nn.LayerNorm(self.image_feat_dim) for _ in range(num_layers)
         ])
 
-
         self.vox_util = vox.Vox_util(self.Z, self.Y, self.X,
                 scene_centroid=model_params.scene_centroid.cuda(),
                 bounds=model_params.bounds,
@@ -397,7 +396,7 @@ class DeformAttnFusionNet(torch.nn.Module):
             x, fourier_spectrum = self.forward_fft(x)
             x = x[:,:, (rho//2 - 8):(rho//2 + 8), (theta//2 - 8):(theta//2 + 8)]
         elif self.aggregation == 'gem':
-            # x = self.gem_conv(x)
+            x = self.gem_conv(x)
             x = self.pooling(x)
 
         x = x.reshape(batch_size, self.output_dim)
@@ -808,10 +807,9 @@ class Encoder_eff(nn.Module):
             input_1, input_2 = endpoints['reduction_5'], endpoints['reduction_4']
         elif self.downsample == 8:
             input_1, input_2 = endpoints['reduction_4'], endpoints['reduction_3']
-        # print('input_1', input_1.shape)
-        # print('input_2', input_2.shape)
+
         x = self.upsampling_layer(input_1, input_2)
-        # print('x', x.shape)
+
         return x
 
     def forward(self, x):

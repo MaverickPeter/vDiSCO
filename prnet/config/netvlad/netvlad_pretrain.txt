@@ -4,15 +4,13 @@ model = netvlad_pretrain
 use_rgb = True
 use_panorama = True
 normalize = True
-transfusion = False
-aggregation = gem
 
 # coordinates: polar, cartesian
 coordinates = polar
 
 # image_encoder: res18, unet, res50
 # point_encoder: voxel, focal, unet
-image_meta_path = /mnt/workspace/datasets/NCLT/cam_params/image_meta.pkl
+image_meta_path = /mnt/workspace/datasets/NCLT/image_meta.pkl
 image_encoder = res50
 point_encoder = unet
 

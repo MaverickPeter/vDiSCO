@@ -24,7 +24,7 @@ def get_scans(sequence: NCLTSequence) -> List[EvaluationTuple]:
 
 
 def generate_evaluation_set(dataset_root: str, map_sequence: str, query_sequence: str, sampling_distance: float = 0.2,
-                            dist_threshold=20) -> EvaluationSet:
+                            dist_threshold=20, sph: bool = False) -> EvaluationSet:
     split = 'test'
     map_sequence = NCLTSequence(dataset_root, map_sequence, split=split, sampling_distance=sampling_distance)
     query_sequence = NCLTSequence(dataset_root, query_sequence, split=split, sampling_distance=sampling_distance)
@@ -32,24 +32,24 @@ def generate_evaluation_set(dataset_root: str, map_sequence: str, query_sequence
     map_set = get_scans(map_sequence)
     query_set = get_scans(query_sequence)
     
-    # for i in tqdm.tqdm(range(len(query_set))):
-    #     reading_filepath = query_set[i].rel_scan_filepath
-    #     reading_filepath = os.path.join(dataset_root, reading_filepath)
-    #     images = [load_im_file_for_generate(pc2image_file(reading_filepath, '/velodyne_sync/', i, '.bin'), False) for i in range(1, 6)]
-    #     sph_filename = reading_filepath.replace('bin', 'jpg')
-    #     sph_filename = sph_filename.replace('velodyne_sync', 'sph')
-    #     sph_img = generate_sph_image(images, 'nclt', dataset_root)
-    #     cv2.imwrite(sph_filename, sph_img)
-    #     # cv2.imwrite("/mnt/workspace/sph.png", sph_img)
+    if sph:
+        for i in tqdm.tqdm(range(len(query_set))):
+            reading_filepath = query_set[i].rel_scan_filepath
+            reading_filepath = os.path.join(dataset_root, reading_filepath)
+            images = [load_im_file_for_generate(pc2image_file(reading_filepath, '/velodyne_sync/', i, '.bin')) for i in range(1, 6)]
+            sph_filename = reading_filepath.replace('bin', 'jpg')
+            sph_filename = sph_filename.replace('velodyne_sync', 'sph')
+            sph_img = generate_sph_image(images, 'nclt', "/media/workspace/dataset/NCLT/image_meta.pkl", dataset_root)
+            cv2.imwrite(sph_filename, sph_img)
 
-    # for i in tqdm.tqdm(range(len(map_set))):
-    #     reading_filepath = map_set[i].rel_scan_filepath
-    #     reading_filepath = os.path.join(dataset_root, reading_filepath)
-    #     images = [load_im_file_for_generate(pc2image_file(reading_filepath, '/velodyne_sync/', i, '.bin'), False) for i in range(1, 6)]
-    #     sph_filename = reading_filepath.replace('bin', 'jpg')
-    #     sph_filename = sph_filename.replace('velodyne_sync', 'sph')
-    #     sph_img = generate_sph_image(images, 'nclt', dataset_root)
-    #     cv2.imwrite(sph_filename, sph_img)
+        for i in tqdm.tqdm(range(len(map_set))):
+            reading_filepath = map_set[i].rel_scan_filepath
+            reading_filepath = os.path.join(dataset_root, reading_filepath)
+            images = [load_im_file_for_generate(pc2image_file(reading_filepath, '/velodyne_sync/', i, '.bin')) for i in range(1, 6)]
+            sph_filename = reading_filepath.replace('bin', 'jpg')
+            sph_filename = sph_filename.replace('velodyne_sync', 'sph')
+            sph_img = generate_sph_image(images, 'nclt', "/media/workspace/dataset/NCLT/image_meta.pkl", dataset_root)
+            cv2.imwrite(sph_filename, sph_img)
 
 
     # Function used in evaluation dataset generation
@@ -66,6 +66,7 @@ if __name__ == '__main__':
     parser.add_argument('--sampling_distance', type=float, default=0.2)
     # Ignore query elements that do not have a corresponding map element within the given threshold (in meters)
     parser.add_argument('--dist_threshold', type=float, default=2.0)
+    parser.add_argument('--sph', type=bool, default=False)
     args = parser.parse_args()
 
     print(f'Dataset root: {args.dataset_root}')
@@ -80,8 +81,8 @@ if __name__ == '__main__':
         print(f'Query sequence: {query_sequence}')
 
         test_set = generate_evaluation_set(args.dataset_root, map_sequence, query_sequence,
-                                           sampling_distance=args.sampling_distance, dist_threshold=args.dist_threshold)
+                                           sampling_distance=args.sampling_distance, dist_threshold=args.dist_threshold, sph=args.sph)
 
         pickle_name = f'test_{map_sequence}_{query_sequence}_{args.sampling_distance}.pickle'
         file_path_name = os.path.join(args.dataset_root, pickle_name)
-        test_set.save(file_path_name)
+        # test_set.save(file_path_name)

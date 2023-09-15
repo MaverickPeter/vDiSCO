@@ -1,0 +1,11 @@
+[MODEL]
+model = dolg_front
+use_rgb = True
+
+#use_panorama = True
+#Height = 160
+#Width = 768
+
+use_panorama = False
+Height = 224
+Width = 384
